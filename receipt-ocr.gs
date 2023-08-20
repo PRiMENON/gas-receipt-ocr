@@ -6,31 +6,33 @@ const FOLDER_ID          = PropertiesService.getScriptProperties().getProperty('
 const SHEET_NAME         = PropertiesService.getScriptProperties().getProperty('SHEET_NAME');
 
 function doPost(e) {
-  var json = JSON.parse(e.postData.contents);
+  let json = JSON.parse(e.postData.contents);
 
-  var img_url = LINE_DATA_ENDPOINT + json.events[0].message.id + "/content";
-  var img_options = { "headers" : { 'Authorization': 'Bearer ' + LINE_ACCESS_TOKEN } };
+  let img_url = LINE_DATA_ENDPOINT + json.events[0].message.id + "/content";
+  let img_options = { "headers" : { 'Authorization': 'Bearer ' + LINE_ACCESS_TOKEN } };
   const blob = UrlFetchApp.fetch(img_url, img_options).getBlob();
 
-  var driveOptions = {
+  let driveOptions = {
       "title": "test.jpg",
       "parents": [{id: FOLDER_ID}] 
      };
   const image = Drive.Files.insert(driveOptions, blob, { "ocr": true, "ocrLanguage": "ja" });
-  var ocrText = DocumentApp.openById(image.id).getBody().getText();
+  let ocrText = DocumentApp.openById(image.id).getBody().getText();
+  let date = new Date();
+      date = Utilities.formatDate(date, 'JST', 'yyyy-MM-dd HH:mm:ss');
 
-  var sheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName(SHEET_NAME);
-  var lastRow = sheet.getLastRow();
-  SpreadsheetApp.openById(SHEET_ID).getSheetByName(SHEET_NAME).getRange(lastRow + 1, 1).setValue(ocrText);
+  let sheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName(SHEET_NAME);
+  let lastRow = sheet.getLastRow();
+  SpreadsheetApp.openById(SHEET_ID).getSheetByName(SHEET_NAME).getRange(lastRow + 1, 1, 1, 2).setValues([[date,ocrText]]);
 
-  var folder = DriveApp.getFolderById(FOLDER_ID);
-  var files = folder.getFiles();
+  let folder = DriveApp.getFolderById(FOLDER_ID);
+  let files = folder.getFiles();
   while(files.hasNext()){
-    var file = files.next();
+    let file = files.next();
     file.setTrashed(true);
   }
-  var message = {"replyToken":json.events[0].replyToken,"messages":[{"type": "text","text" : "書き込み完了"}]};
-  var options = {
+  let message = {"replyToken":json.events[0].replyToken,"messages":[{"type": "text","text" : "書き込み完了"}]};
+  let options = {
     "method" : "post",
     "headers" : {
       "Content-Type" : "application/json; charset=UTF-8",
